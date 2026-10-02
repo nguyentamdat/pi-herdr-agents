@@ -138,7 +138,7 @@ import {
 	persistWorktreeResult,
 	runSubagentScript,
 	writeWorktreeManifest,
-	buildSubagentToolAllowlist,
+	buildSubagentToolExclusions,
 	type WorktreeHandoff,
 	type WorktreeLaunch,
 } from "./launch.ts";
@@ -2410,7 +2410,7 @@ export const __test__ = {
 	resolveLaunchBehavior,
 	resolveEffectiveAutoExit,
 	resolveEffectiveInteractive,
-	buildSubagentToolAllowlist,
+	buildSubagentToolExclusions,
 	buildPiPromptArgs,
 	buildBtwLaunchCommand,
 	resolveEffectivePersistent,

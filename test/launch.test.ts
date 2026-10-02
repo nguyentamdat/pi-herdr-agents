@@ -181,7 +181,10 @@ describe("Pi launch", () => {
 			assert.ok(command.startsWith(`cd ${expectedShellQuote(project)} && `));
 			assert.match(command, /--model 'fake\/worker'/);
 			assert.match(command, /--thinking 'high'/);
-			assert.match(command, /--tools 'read,bash,caller_ping'/);
+			assert.match(
+				command,
+				/--exclude-tools 'powershell,edit,write,grep,find,ls'/,
+			);
 			assert.doesNotMatch(command, /subagent_done/);
 			assert.match(command, /PI_DENY_TOOLS='subagent,subagent_resume'/);
 			assert.match(command, /PI_SUBAGENT_AUTO_EXIT=1/);
@@ -522,7 +525,10 @@ describe("Pi launch", () => {
 			);
 
 			assert.match(command, /PI_SUBAGENT_AUTO_EXIT=0/);
-			assert.match(command, /--tools 'read,bash,caller_ping,subagent_done'/);
+			assert.match(
+				command,
+				/--exclude-tools 'powershell,edit,write,grep,find,ls'/,
+			);
 		});
 	});
 
@@ -689,7 +695,7 @@ describe("Pi launch", () => {
 			assert.match(command, /PI_SUBAGENT_AUTO_EXIT=0/);
 			assert.match(
 				command,
-				/--tools 'read,bash,grep,find,ls,caller_ping,subagent_done'/,
+				/--exclude-tools 'powershell,edit,write'/,
 			);
 			const taskPath = command.match(/'@([^']+\.md)'/)?.[1];
 			assert.ok(taskPath, "expected artifact-backed coordinator task");
@@ -771,7 +777,7 @@ describe("Pi launch", () => {
 				);
 				assert.ok(
 					command.includes(
-						`pi --session ${expectedShellQuote(sessionFile)} --tools 'read,bash,caller_ping' -e `,
+						`pi --session ${expectedShellQuote(sessionFile)} --exclude-tools 'powershell,edit,write,grep,find,ls' -e `,
 					),
 				);
 				assert.match(command, /PI_SUBAGENT_NAME='Resume worker'/);

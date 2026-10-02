@@ -1381,11 +1381,11 @@ describe("subagent resume launch policy", () => {
 
 			assert.match(
 				commands[1],
-				/PI_DENY_TOOLS='subagent,subagent_resume'.*--tools 'read,caller_ping,subagent_done'/,
+				/PI_DENY_TOOLS='subagent,subagent_resume'.*--exclude-tools 'bash,powershell,edit,write,grep,find,ls'/,
 			);
 			assert.match(
 				commands[2],
-				/PI_DENY_TOOLS='subagent,subagent_resume'.*--tools 'read,caller_ping'/,
+				/PI_DENY_TOOLS='subagent,subagent_resume'.*--exclude-tools 'bash,powershell,edit,write,grep,find,ls'/,
 			);
 		} finally {
 			rmSync(dir, { recursive: true, force: true });
@@ -3471,26 +3471,22 @@ describe("subagent discovery", () => {
 		);
 	});
 
-	it("buildSubagentToolAllowlist keeps explicit completion for interactive children", () => {
+	it("buildSubagentToolExclusions preserves extension tools", () => {
 		assert.equal(
-			testApi.buildSubagentToolAllowlist("read,bash,web_search"),
-			"read,bash,web_search,caller_ping,subagent_done",
+			testApi.buildSubagentToolExclusions("read,bash,web_search"),
+			"powershell,edit,write,grep,find,ls",
 		);
 	});
 
-	it("buildSubagentToolAllowlist omits explicit completion for auto-exit children", () => {
+	it("buildSubagentToolExclusions returns null without a built-in restriction", () => {
+		assert.equal(testApi.buildSubagentToolExclusions(undefined), null);
+		assert.equal(testApi.buildSubagentToolExclusions(""), null);
 		assert.equal(
-			testApi.buildSubagentToolAllowlist(
-				"read,bash,web_search,subagent_done",
-				true,
+			testApi.buildSubagentToolExclusions(
+				"read,bash,powershell,edit,write,grep,find,ls",
 			),
-			"read,bash,web_search,caller_ping",
+			null,
 		);
-	});
-
-	it("buildSubagentToolAllowlist returns null without an explicit tool restriction", () => {
-		assert.equal(testApi.buildSubagentToolAllowlist(undefined), null);
-		assert.equal(testApi.buildSubagentToolAllowlist(""), null);
 	});
 
 	it("buildPiPromptArgs inserts separator for artifact-backed launches with skills", () => {

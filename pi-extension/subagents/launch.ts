@@ -37,6 +37,16 @@ import {
 } from "./terminal.ts";
 
 const SUBAGENTS_DIR = dirname(fileURLToPath(import.meta.url));
+const BUILTIN_TOOL_NAMES = [
+	"read",
+	"bash",
+	"powershell",
+	"edit",
+	"write",
+	"grep",
+	"find",
+	"ls",
+];
 
 type SubagentSessionMode = "standalone" | "lineage-only" | "fork";
 
@@ -630,11 +640,8 @@ function buildPiCommand(
 			shellQuote(artifacts.systemPromptFile),
 		);
 	}
-	const toolAllowlist = buildSubagentToolAllowlist(
-		request.behavior.tools,
-		request.behavior.autoExit,
-	);
-	if (toolAllowlist) parts.push("--tools", shellQuote(toolAllowlist));
+	const toolExclusions = buildSubagentToolExclusions(request.behavior.tools);
+	if (toolExclusions) parts.push("--exclude-tools", shellQuote(toolExclusions));
 	if (!request.handoff) {
 		for (const prompt of buildPromptArgs(
 			request.behavior.skills,
@@ -792,16 +799,15 @@ async function launchResumedPiSubagent(
 			`PI_SUBAGENT_ACTIVITY_FILE=${shellQuote(activityFile)}`,
 			`PI_SUBAGENT_AUTO_EXIT=${autoExit ? "1" : "0"}`,
 		];
-		const toolAllowlist = buildSubagentToolAllowlist(
+		const toolExclusions = buildSubagentToolExclusions(
 			policy.tools?.join(","),
-			autoExit,
 		);
 		const command = [
 			...env,
 			"pi",
 			"--session",
 			shellQuote(request.sessionFile),
-			...(toolAllowlist ? ["--tools", shellQuote(toolAllowlist)] : []),
+			...(toolExclusions ? ["--exclude-tools", shellQuote(toolExclusions)] : []),
 			"-e",
 			shellQuote(join(SUBAGENTS_DIR, "subagent-done.ts")),
 			...(messageFile ? [shellQuote(`@${messageFile}`)] : []),
@@ -849,20 +855,16 @@ async function launchResumedPiSubagent(
 	}
 }
 
-export function buildSubagentToolAllowlist(
-	tools?: string,
-	autoExit = false,
-): string | null {
-	const requested = (tools ?? "")
-		.split(",")
-		.map((tool) => tool.trim())
-		.filter(Boolean);
-	if (requested.length === 0) return null;
-	const allow = new Set(requested);
-	allow.delete("subagent_done");
-	allow.add("caller_ping");
-	if (!autoExit) allow.add("subagent_done");
-	return [...allow].join(",");
+export function buildSubagentToolExclusions(tools?: string): string | null {
+	const requested = new Set(
+		(tools ?? "")
+			.split(",")
+			.map((tool) => tool.trim())
+			.filter(Boolean),
+	);
+	if (requested.size === 0) return null;
+	const excluded = BUILTIN_TOOL_NAMES.filter((tool) => !requested.has(tool));
+	return excluded.length > 0 ? excluded.join(",") : null;
 }
 
 function buildPromptArgs(
