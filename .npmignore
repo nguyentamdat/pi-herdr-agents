@@ -1,5 +1,8 @@
 .pi/
 openspec/
+docs/superpowers/
+docs/sidebar-plan.md
+.superpowers/
 test/
 docs/assets/
 .github/
@@ -14,3 +17,4 @@ biome.json
 oxlint.config.ts
 tools/
 *.tgz
+.pi-lens-probe-home/

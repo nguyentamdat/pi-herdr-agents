@@ -6,7 +6,9 @@ The published version must be unique on npm.
 
 ## Public versioning
 
-`0.0.1` was a manual bootstrap publication that established the npm package. `0.0.2` is the first release published through the trusted GitHub Actions workflow and is the current public baseline.
+Use semantic versioning. `CHANGELOG.md` is generated from Git history by
+`npm version`; do not put hand-written instructions there. Keep current usage
+and compatibility requirements in the README and the relevant reference guide.
 
 Do not design a release that creates a GitHub Release without a successful npm publish for a new version. The workflow publishes first, then tags and creates the GitHub Release.
 
@@ -17,7 +19,15 @@ You need:
 - Permission to manage this repository's GitHub Actions settings and npm package access for `pi-herdr-agents`
 - A clean local `main` branch
 
-Automated release gates (run by the workflow and required locally):
+The **CI** workflow (`.github/workflows/ci.yml`) runs on pushes and pull
+requests to `main`, and supports manual dispatch. Its **Checks** job runs the
+checks below plus `git diff --check`, with read-only repository permissions,
+no publishing, and cancellation of superseded CI runs. It uses the same pinned
+Node.js version as **Release**. Herdr integration remains a local gate.
+
+The separate **Release** workflow reruns the automated release gates before
+publishing; it does not depend on the CI workflow's result. These checks are
+also required locally:
 
 ```bash
 npm ci
@@ -33,7 +43,7 @@ Manual deterministic Herdr integration (required before you push a release commi
 npm run test:integration
 ```
 
-Run that suite from inside Herdr. It uses real Pi and Herdr processes with the local deterministic provider, so it needs no provider credentials or network access.
+Run that suite from inside Herdr. It uses real Pi and Herdr processes with the local deterministic provider, so it needs no provider credentials or network access. `test/integration/sidebar.test.ts` also starts two disposable Herdr servers with their own HOME, configuration, sockets, and plugin registry under the system temporary directory, and removes them afterwards. It needs Linux and skips elsewhere.
 
 The optional live-provider smoke test is not a release gate:
 
@@ -41,7 +51,7 @@ The optional live-provider smoke test is not a release gate:
 PI_TEST_MODEL="openai-codex/gpt-5.6-luna" PI_TEST_TIMEOUT=180000 npm run test:integration:live
 ```
 
-Do not release from skipped Herdr tests. Confirm the package preview includes `README.md`, `CHANGELOG.md`, `AGENTS.md`, `docs/`, `agents/`, `skills/orchestrate/SKILL.md`, `skills/orchestrate/adversarial-review.md`, `skills/orchestrate/adversarial-review-example.js`, and excludes `pi-extension/subagents/workflow-worker.js`. Confirm it excludes plans, journals, sessions, prototypes, generated evidence, local `config.json` and `openspec/`, and that the worktree integration tests leave no test workspace behind. Durable user configuration is `$PI_CODING_AGENT_DIR/herdr-agents/config.json`; package-root configuration is ignored, so users must move an older file manually or re-run `/subagents-init`.
+Do not release from skipped Herdr tests. Confirm the package preview includes `README.md`, `CHANGELOG.md`, `AGENTS.md`, `docs/`, `config.json.example`, `examples/role-pack/`, and exactly `README.md`, `herdr-plugin.toml`, and `sidebar.mjs` under `plugins/sidebar/`, excludes the active `docs/sidebar-plan.md`, contains no `agents/` resources, no `skills/` resources other than the host-owned `skills/pi-herdr-agents/SKILL.md`, and no `pi-extension/subagents/plan-skill.md`, and excludes `pi-extension/subagents/workflow-worker.js`. Confirm it excludes plans, journals, sessions, prototypes, generated evidence, local `config.json` and `openspec/`, and that the worktree integration tests leave no test workspace behind. Durable user configuration is `$PI_CODING_AGENT_DIR/herdr-agents/config.json`; package-root configuration is ignored, so users must move an older file manually or re-run `/subagents-init`.
 
 ## npm authentication
 
@@ -60,10 +70,6 @@ After the package exists on npm, steady-state releases use npm trusted publishin
 5. Publish stays tokenless: `npm publish --access public --provenance`.
 
 When the repository secret `NPM_TOKEN` is absent, the publish step unsets `NODE_AUTH_TOKEN` and relies on OIDC. Once the package exists, the workflow fails if `NPM_TOKEN` is still configured, so steady-state releases cannot silently keep using the bootstrap credential. Manual dispatch runs only from `main`; other refs are rejected.
-
-### Bootstrap history
-
-The initial `0.0.1` publication established the npm package. Trusted publishing is now configured for `giuseppecrj/pi-herdr-agents` and `publish.yml`, so all later releases use OIDC only. Later version bumps use trusted publishing only. Do not add `NPM_TOKEN`: the workflow rejects it once the package exists.
 
 ## Publish a release
 
